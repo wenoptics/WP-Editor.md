@@ -10,9 +10,7 @@ class editormd {
 	//停用模式
 	public function deactivate() {
 		global $current_user;
-		$user_id = $current_user->ID;
-		delete_user_meta( $user_id, 'editormd_ignore_notice', 'true' );
-		update_user_option( $user_id, 'rich_editing', 'true', true );
+		update_user_option( $current_user->ID, 'rich_editing', 'true', true );
 	}
 
 	// 提取jetpack模块
@@ -36,10 +34,10 @@ class editormd {
 	// 载入插件设置
 
 	/**
-	* @param $actions
-	*
-	* @return array
-	*/
+	 * @param $actions
+	 *
+	 * @return array
+	 */
 	function jetpack_markdown_settings_link( $actions ) {
 		return array_merge(
 			array(
@@ -56,166 +54,183 @@ class editormd {
 		$emoji_img = paf( 'emoji_library' ) . '/images/basic/';
 		$katex     = paf( 'katex_library' ) . '/katex.min';
 		?>
-		<script type="text/javascript" defer="defer" charset="UTF-8">
-		jQuery(document).ready(function ($) {
-			// 初始化編輯器
-			var EditorMD;
-			$(function () {
-				EditorMD = editormd("wp-content-editor-container", {
-					width: "100%", //编辑器宽度
-					height: 640,    //编辑器高度
-					syncScrolling: <?php paf( 'sync_scrolling' ) == 1 ? print( "true" ) : print( "false" ); ?>,   //即是否开启同步滚动预览
-					watch: <?php paf( 'live_preview' ) == 1 ? print( "true" ) : print( "false" ); ?>,   //即是否开启实时预览
-					htmlDecode: <?php paf( 'html_decode' ) == 1 ? print( "true" ) : print( "false" ); ?>, //HTML标签解析
-					toolbarAutoFixed: true,   //工具栏是否自动固定
-					tocm: false,
-					tocContainer: <?php paf( 'support_toc' ) == 1 ? print( "''" ) : print( "false" ); ?>, //TOC
-					tocDropdown: false,
-					theme: "<?php echo paf( 'theme_style' ); ?>", //编辑器主题
-					previewTheme: "<?php echo paf( 'theme_style' ); ?>", //编辑器主题
-					editorTheme: "<?php echo paf( 'code_style' ); ?>", //编辑器主题
-					emoji: <?php paf( 'support_emoji' ) == 1 ? print( "true" ) : print( "false" ); ?>, //Emoji表情
-					tex: <?php paf( 'support_katex' ) == 1 ? print( "true" ) : print( "false" ) ?>, //LaTeX公式
-					atLink: false,//Github @Link
-					flowChart: <?php paf( 'support_flowchart' ) == 1 ? print( "true" ) : print( "false" ) ?>, //FlowChart流程图
-					sequenceDiagram: <?php paf( 'support_sequence' ) == 1 ? print( "true" ) : print( "false" ) ?>,//SequenceDiagram时序图
-					taskList: <?php paf( 'task_list' ) == 1 ? print( "true" ) : print( "false" ) ?>,//task lists
-					path: "<?php echo WP_EDITORMD_PLUGIN_URL ?>/Editor.md/lib/", //资源路径
-					placeholder: "<?php echo __( "Enjoy Markdown! coding now...", "editormd" ) ?>",
-					toolbarIcons: function () {
-						// Or return editormd.toolbarModes[name]; // full, simple, mini
-						// Using "||" set icons align right.
-						return [
-							"undo", "redo", "|",
-							"bold", "del", "italic", "quote", "ucwords", "uppercase", "lowercase", "|",
-							"h1", "h2", "h3", "h4", "h5", "h6", "|",
-							"list-ul", "list-ol", "hr", "|",
-							"link", "reference-link", "image", "code", "preformatted-text", "code-block", "table", "datetime", "html-entities", "more", "pagebreak", <?php paf( 'support_emoji' ) == 1 ? print( "\"emoji\"," ) : print( "" ); ?> "toc", "|",
-							"goto-line", "watch", "preview", "fullscreen", "clear", "search", "|",
-							"help", "info"
-						];
-					},
-					//强制全屏
-					onfullscreen: function () {
-						window.document.getElementById("wp-content-editor-container").style.position = "fixed";
-						window.document.getElementById("wp-content-editor-container").style.zIndex = "99999";
-					},
-					//退出全屏返回原来的样式
-					onfullscreenExit: function () {
-						window.document.getElementById("wp-content-editor-container").style.position = "relative";
-						window.document.getElementById("wp-content-editor-container").style.zIndex = "auto";
-					},
-					//自定义工具栏
-					toolbarIconsClass: {
-						toc: "fa-list-alt",  // 指定一个FontAawsome的图标类
-						more: "fa-ellipsis-h"
-					},
-					// 自定义工具栏按钮的事件处理
-					toolbarHandlers: {
-						/**
-						* @param {Object}      cm         CodeMirror对象
-						* @param {Object}      icon       图标按钮jQuery元素对象
-						* @param {Object}      cursor     CodeMirror的光标对象，可获取光标所在行和位置
-						* @param {String}      selection  编辑器选中的文本
-						*/
-						toc: function (cm, icon, cursor, selection) {
-							cm.replaceSelection("[toc]");
-						},
-						more: function (cm, icon, cursor, selection) {
-							cm.replaceSelection("\r\n<!--more-->\r\n");
-						}
-					},
-					lang: {
-						toolbar: {
-							toc: "<?php echo __( "The Table Of Contents", "editormd" ) ?>",
-							more: "<?php echo __( "More" )?>"
-						}
-					}
-				});
-			});
-			//隐藏原来编辑器工具栏
-			document.getElementById("ed_toolbar").style.display = "none";
-			//WP Media module支持
-			var original_wp_media_editor_insert = wp.media.editor.insert;
-			wp.media.editor.insert = function (html) {
-				//console.log(html);
-				//创建新的DOM
-				var htmlDom = document.createElement("div");
-				htmlDom.style.display = "none";
-				htmlDom.id = "htmlDom";
-				htmlDom.innerHTML = html;
-				document.body.appendChild(htmlDom);
-				var dom = window.document.getElementById("htmlDom").childNodes[0];
-				var markdownSrc;
-				switch (dom.localName) {
-					case "a":
-						if (dom.childNodes[0].localName === "img") {
-							markdownSrc = '[![](' + dom.childNodes[0].src + ')](' + dom.href + ')';
-						} else {
-							markdownSrc = '[' + dom.innerText + '](' + dom.href + ')';
-						}
-						break;
-					case "img":
-						var htmlSrc = window.document.getElementsByClassName("alignnone")[0].src;
-						var htmlAlt = window.document.getElementsByClassName("alignnone")[0].alt;
-						markdownSrc = '![' + htmlAlt + '](' + htmlSrc + ')';
-						break;
-					default:
-						markdownSrc = window.document.getElementById("htmlDom").innerText;
+        <script type="text/javascript" defer="defer" charset="UTF-8">
+            jQuery(document).ready(function ($) {
+                // 初始化編輯器
+                var EditorMD;
+                $(function () {
+                    EditorMD = editormd("wp-content-editor-container", {
+                        width: "100%", //编辑器宽度
+                        height: 640,    //编辑器高度
+                        syncScrolling: <?php paf( 'sync_scrolling' ) == 1 ? print( "true" ) : print( "false" ); ?>,   //即是否开启同步滚动预览
+                        watch: <?php paf( 'live_preview' ) == 1 ? print( "true" ) : print( "false" ); ?>,   //即是否开启实时预览
+                        htmlDecode: <?php paf( 'html_decode' ) == 1 ? print( "true" ) : print( "false" ); ?>, //HTML标签解析
+                        toolbarAutoFixed: true,   //工具栏是否自动固定
+                        tocm: false,
+                        tocContainer: <?php paf( 'support_toc' ) == 1 ? print( "''" ) : print( "false" ); ?>, //TOC
+                        tocDropdown: false,
+                        theme: "<?php echo paf( 'theme_style' ); ?>", //编辑器主题
+                        previewTheme: "<?php echo paf( 'theme_style' ); ?>", //编辑器主题
+                        editorTheme: "<?php echo paf( 'code_style' ); ?>", //编辑器主题
+                        emoji: <?php paf( 'support_emoji' ) == 1 ? print( "true" ) : print( "false" ); ?>, //Emoji表情
+                        tex: <?php paf( 'support_katex' ) == 1 ? print( "true" ) : print( "false" ) ?>, //LaTeX公式
+                        atLink: false,//Github @Link
+                        flowChart: <?php paf( 'support_flowchart' ) == 1 ? print( "true" ) : print( "false" ) ?>, //FlowChart流程图
+                        sequenceDiagram: <?php paf( 'support_sequence' ) == 1 ? print( "true" ) : print( "false" ) ?>,//SequenceDiagram时序图
+                        taskList: <?php paf( 'task_list' ) == 1 ? print( "true" ) : print( "false" ) ?>,//task lists
+                        path: "<?php echo WP_EDITORMD_PLUGIN_URL ?>/Editor.md/lib/", //资源路径
+                        placeholder: "<?php echo __( "Enjoy Markdown! coding now...", "editormd" ) ?>",
+                        toolbarIcons: function () {
+                            // Or return editormd.toolbarModes[name]; // full, simple, mini
+                            // Using "||" set icons align right.
+                            return [
+                                "undo", "redo", "|",
+                                "bold", "del", "italic", "quote", "ucwords", "uppercase", "lowercase", "|",
+                                "h1", "h2", "h3", "h4", "h5", "h6", "|",
+                                "list-ul", "list-ol", "hr", "|",
+                                "link", "reference-link", "image", "code", "preformatted-text", "code-block", "table", "datetime", "html-entities", "more", "pagebreak", <?php paf( 'support_emoji' ) == 1 ? print( "\"emoji\"," ) : print( "" ); ?> "toc", "|",
+                                "goto-line", "watch", "preview", "fullscreen", "clear", "search", "|",
+                                "help", "info"
+                            ];
+                        },
+                        //强制全屏
+                        onfullscreen: function () {
+                            window.document.getElementById("wp-content-editor-container").style.position = "fixed";
+                            window.document.getElementById("wp-content-editor-container").style.zIndex = "99999";
+                        },
+                        //退出全屏返回原来的样式
+                        onfullscreenExit: function () {
+                            window.document.getElementById("wp-content-editor-container").style.position = "relative";
+                            window.document.getElementById("wp-content-editor-container").style.zIndex = "auto";
+                        },
+                        //自定义工具栏
+                        toolbarIconsClass: {
+                            toc: "fa-list-alt",  // 指定一个FontAawsome的图标类
+                            more: "fa-ellipsis-h"
+                        },
+                        // 自定义工具栏按钮的事件处理
+                        toolbarHandlers: {
+                            /**
+                             * @param {Object}      cm         CodeMirror对象
+                             * @param {Object}      icon       图标按钮jQuery元素对象
+                             * @param {Object}      cursor     CodeMirror的光标对象，可获取光标所在行和位置
+                             * @param {String}      selection  编辑器选中的文本
+                             */
+                            toc: function (cm, icon, cursor, selection) {
+                                cm.replaceSelection("[toc]");
+                            },
+                            more: function (cm, icon, cursor, selection) {
+                                cm.replaceSelection("\r\n<!--more-->\r\n");
+                            }
+                        },
+                        lang: {
+                            toolbar: {
+                                toc: "<?php echo __( "The Table Of Contents", "editormd" ) ?>",
+                                more: "<?php echo __( "More" )?>"
+                            }
+                        }
+                    });
+                });
+                //隐藏原来编辑器工具栏
+                document.getElementById("ed_toolbar").style.display = "none";
+                //WP Media module支持
+                var original_wp_media_editor_insert = wp.media.editor.insert;
+                wp.media.editor.insert = function (html) {
+                    //console.log(html);
+                    //创建新的DOM
+                    var htmlDom = document.createElement("div");
+                    htmlDom.style.display = "none";
+                    htmlDom.id = "htmlDom";
+                    htmlDom.innerHTML = html;
+                    document.body.appendChild(htmlDom);
+                    var dom = window.document.getElementById("htmlDom").childNodes[0];
+                    var markdownSrc;
+                    switch (dom.localName) {
+                        case "a":
+                            if (dom.childNodes[0].localName === "img") {
+                                markdownSrc = '[![](' + dom.childNodes[0].src + ')](' + dom.href + ')';
+                            } else {
+                                markdownSrc = '[' + dom.innerText + '](' + dom.href + ')';
+                            }
+                            break;
+                        case "img":
+                            var htmlSrc = window.document.getElementsByClassName("alignnone")[0].src;
+                            var htmlAlt = window.document.getElementsByClassName("alignnone")[0].alt;
+                            markdownSrc = '![' + htmlAlt + '](' + htmlSrc + ')';
+                            break;
+                        default:
+                            markdownSrc = window.document.getElementById("htmlDom").innerText;
+                    }
+                    original_wp_media_editor_insert(markdownSrc);
+                    EditorMD.insertValue(markdownSrc);
+                    //移除dom
+                    document.getElementById("htmlDom").remove();
+                };
+				<?php
+				/*Emoji配置脚本*/
+				if ( paf( 'support_emoji' ) == 1 ) {
+					echo "
+                //Emoji表情自定义服务器地址
+                editormd.emoji = {
+                    path: \"$emoji_img\",
+                    ext: \".png\"
+                };";
 				}
-				original_wp_media_editor_insert(markdownSrc);
-				EditorMD.insertValue(markdownSrc);
-				//移除dom
-				document.getElementById("htmlDom").remove();
-			};
-			<?php
-			/*Emoji配置脚本*/
-			if ( paf( 'support_emoji' ) == 1 ) {
-				echo "
-				//Emoji表情自定义服务器地址
-				editormd.emoji = {
-					path: \"$emoji_img\",
-					ext: \".png\"
-				};";
-			}
-			/*LaTeX公式配置脚本*/
-			if ( paf( 'support_katex' ) == 1 ) {
-				echo "
+				/*LaTeX公式配置脚本*/
+				if ( paf( 'support_katex' ) == 1 ) {
+					echo "
 				//KaTeX科学公式加载库地址
-				editormd.katexURL = {
-					css : \"$katex\",
-					js  : \"$katex\"
-				};";
-			}
-			/*图像粘贴配置脚本*/
+                editormd.katexURL = {
+                    css : \"$katex\",
+                    js  : \"$katex\"
+                };";
+				}
 
+				/*图像粘贴配置脚本*/
 			if ( paf( 'imagepaste' ) == 1 ) {
 				$jsDoAjax = '';
+				$jsUploadMethodAlias = '?';
 				switch (paf('imagepaste_method')) {
 					case 'smms':
+						// When we upload img to https://sm.ms
+						$jsUploadMethodAlias = "SM.MS";
 						$jsDoAjax = "
-						var data = {
-							smfile: dataurl
-						};
+						var form = new FormData();
+						form.append('smfile', blob, blob.name);
 						$.ajax({
 							url: 'https://sm.ms/api/upload',
 							type: 'post',
-							data: data,
-							success: onUploadSuccess
+							data: form,
+							processData: false, // add this to avoid formdata error
+							contentType: false, // add this to avoid formdata error
+							success: function(res) {
+								if (res.code === 'success') {
+									onUploadCallback({
+										url: res.data.url
+									});
+									return;
+								}
+								onUploadCallback({error: res.data.msg});
+							}
 						});
 						";
 						break;
 					case 'local': /* as well as */ default:
+						// Upload image to local. Use the php API by `淮城一只猫`
+						$jsUploadMethodAlias = __("本地", 'editormd');
 						$jsDoAjax = "
-						var data = {
-							action: 'imagepaste_action',
-							dataurl: dataurl
-						};
-						$.ajax({
-							url: ajaxurl,
-							type: 'post',
-							data: data,
-							success: onUploadSuccess
+						//传参
+						readBlobAsDataURL(blob, function (dataurl) {
+							var data = {
+								action: 'imagepaste_action',
+								dataurl: dataurl
+							};
+							$.ajax({
+								url: ajaxurl,
+								type: 'post',
+								data: data,
+								success: onUploadCallback
+							});
 						});
 						";
 						break;
@@ -256,21 +271,22 @@ class editormd {
 							};
 							reader.readAsDataURL(blob);
 						}
-						//传参
-						readBlobAsDataURL(blob, function (dataurl) {
-							var uploadingText = '![图片上传中...]';
-							var uploadFailText = '![图片上传失败]';
-							var onUploadSuccess = function (request) {
-								var obj = eval(\"(\" + request + \")\");
-								if (obj.error) {
-									EditorMD.setValue(EditorMD.getValue().replace(uploadingText, uploadFailText));
-								} else {
-									EditorMD.setValue(EditorMD.getValue().replace(uploadingText, '![](' + obj.url + ')'));
-								}
-							};
-							EditorMD.insertValue(uploadingText);
-							" . $jsDoAjax . "
-						});
+
+						var uploadingText = '![正在将图片上传到".$jsUploadMethodAlias."...]';
+						var uploadFailText = '![图片上传到".$jsUploadMethodAlias."失败]';
+						EditorMD.insertValue(uploadingText);
+
+						var onUploadCallback = function (response) {
+							if (typeof(response) === 'string') {
+								response = JSON.parse(response);
+							}
+							if (response.error) {
+								EditorMD.setValue(EditorMD.getValue().replace(uploadingText, uploadFailText + response.error));
+							} else {
+								EditorMD.setValue(EditorMD.getValue().replace(uploadingText, '![](' + response.url + ')'));
+							}
+						};
+						" . $jsDoAjax . "
 					}
 				});
 				if (localStorage.getItem(\"wp_editormd\") !== 'true') {
@@ -278,11 +294,11 @@ class editormd {
 					localStorage.setItem(\"wp_editormd\",\"true\");
 				};
 				//<!--End-->
-				";
-			}
-			?>
-		});
-		</script>
+				    ";
+				}
+				?>
+            });
+        </script>
 		<?php
 	}
 
@@ -320,34 +336,34 @@ class editormd {
 
 	public function add_admin_head() {
 		?>
-		<style type="text/css" rel="stylesheet">
-		.editormd_wrap input#submit {
-			border: none
-		}
+        <style type="text/css" rel="stylesheet">
+            .editormd_wrap input#submit {
+                border: none
+            }
 
-		.markdown-body img.emoji {
-			height: 24px !important;
-			width: 24px !important
-		}
+            .markdown-body img.emoji {
+                height: 24px !important;
+                width: 24px !important
+            }
 
-		.markdown-body h2 {
-			font-size: 1.75em !important;
-			line-height: 1.225 !important;
-			padding: 0 0 .3em 0 !important
-		}
+            .markdown-body h2 {
+                font-size: 1.75em !important;
+                line-height: 1.225 !important;
+                padding: 0 0 .3em 0 !important
+            }
 
-		.markdown-body.editormd-preview-container ul {
-			list-style: initial
-		}
+            .markdown-body.editormd-preview-container ul {
+                list-style: initial
+            }
 
-		.markdown-body.editormd-preview-container ol {
-			margin-left: 0 !important
-		}
+            .markdown-body.editormd-preview-container ol {
+                margin-left: 0 !important
+            }
 
-		.wrap a:active, .wrap a:hover, .wrap a:link, .wrap a:visited {
-			text-decoration: none
-		}
-		</style>
+            .wrap a:active, .wrap a:hover, .wrap a:link, .wrap a:visited {
+                text-decoration: none
+            }
+        </style>
 		<?php
 	}
 
@@ -383,73 +399,43 @@ class editormd {
 
 	public function emoji_enqueue_footer_js() {
 		?>
-		<script type="text/javascript" charset="UTF-8">
-		window.onload = function () {
-			emojify.setConfig({
-				img_dir: "<?php echo paf( 'emoji_library' ) . '/images/basic' ?>",//前端emoji资源地址
-				blacklist: {
-					'ids': [],
-					'classes': ['no-emojify'],
-					'elements': ['^script$', '^textarea$', '^pre$', '^code$']
-				}
-			});
-			emojify.run();
-		}
-		</script>
+        <script type="text/javascript" charset="UTF-8">
+            window.onload = function () {
+                emojify.setConfig({
+                    img_dir: "<?php echo paf( 'emoji_library' ) . '/images/basic' ?>",//前端emoji资源地址
+                    blacklist: {
+                        'ids': [],
+                        'classes': ['no-emojify'],
+                        'elements': ['^script$', '^textarea$', '^pre$', '^code$']
+                    }
+                });
+                emojify.run();
+            }
+        </script>
 		<?php
 	}
 
 	public function mobile_code_javascript() {
 		?>
-		<script type="text/javascript" charset="UTF-8" defer="defer">
-		var div1 = $(".CodeMirror.cm-s-default.CodeMirror-wrap")[0],
-		div2 = $(".editormd-preview-theme-default")[0];
-		window.onload = function () {
-			if (navigator.userAgent.match(/(iPhone|iPod|Android|ios)/i)) {
-				$("i.fa-eye-slash").attr("class", "fa fa-eye");
-				div2.style.display = "none";
-				div1.style.width = "100%";
-				div1.style.borderRight = "none";
-			}
-			//TODO 添加兼容
-			// (function() {
-			//     var hm = document.createElement("script");
-			//     hm.src = "http://localhost/wordpress/wp-content/plugins/WP-Editor.MD/jQuery/jquery.min.js?ver=3.5";
-			//     var s = document.getElementsByTagName("head")[0];
-			//     s.parentNode.insertBefore(hm, s);
-			// })();
-		}
-		</script>
+        <script type="text/javascript" charset="UTF-8" defer="defer">
+            window.onload = function () {
+                if (navigator.userAgent.match(/(iPhone|iPod|Android|ios)/i)) {
+                    $("i.fa-eye-slash").attr("class", "fa fa-eye");
+                    $(".editormd-preview-theme-default")[0].style.display = "none";
+                    $(".CodeMirror.cm-s-default.CodeMirror-wrap")[0].style.width = "100%";
+                    $(".CodeMirror.cm-s-default.CodeMirror-wrap")[0].style.borderRight = "none";
+                }
+                //TODO 添加兼容
+                // (function() {
+                //     var hm = document.createElement("script");
+                //     hm.src = "http://localhost/wordpress/wp-content/plugins/WP-Editor.MD/jQuery/jquery.min.js?ver=3.5";
+                //     var s = document.getElementsByTagName("head")[0];
+                //     s.parentNode.insertBefore(hm, s);
+                // })();
+            }
+        </script>
 		<?php
 	}
-
-	/**
-	* 通知显示
-	*/
-	public function editormd_notice() {
-		global $pagenow;
-		if ( ! is_multisite() && ( $pagenow == 'plugins.php' || $pagenow == 'themes.php' ) ) {
-			global $current_user;
-			$user_id = $current_user->ID;
-			if ( ! get_user_meta( $user_id, 'editormd_ignore_notice' ) ) {
-				echo '<div class="updated editormd_setup_nag"><p>';
-				printf( __( '请到设置里更新您喜爱的选项吧。  <a href="%1$s" target="_blank">跳转设置</a> | <a href="%2$s">隐藏通知</a>', 'options-framework' ), admin_url( 'options-general.php?page=wpeditormd&tab=basic' ), '?editormd_nag_ignore=0' );
-				echo "</p></div>";
-			}
-		}
-	}
-
-	/**
-	* 允许用户隐藏通知
-	*/
-	public function editormd_notice_ignore() {
-		global $current_user;
-		$user_id = $current_user->ID;
-		if ( isset( $_GET['editormd_nag_ignore'] ) && '0' == $_GET['editormd_nag_ignore'] ) {
-			add_user_meta( $user_id, 'editormd_ignore_notice', 'true', true );
-		}
-	}
-
 }
 
 $editormd = new editormd();

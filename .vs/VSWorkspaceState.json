@@ -1,0 +1,14 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\Admin",
+    "\\Admin\\data",
+    "\\Admin\\skelet\\assets\\css",
+    "\\Admin\\skelet\\core",
+    "\\Editor.md\\lib\\codemirror",
+    "\\Editor.md\\plugins",
+    "\\Prism\\customize"
+  ],
+  "SelectedNode": "\\editormd_class.php",
+  "PreviewInSolutionExplorer": false
+}

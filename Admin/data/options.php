@@ -431,6 +431,7 @@ $options['other_two'] = array(
     'description' => '<a class="other_one" href="//shang.qq.com/wpa/qunwpa?idkey=b002f812688440a89bbdb2c42798566b3fef29edafc30601357f4e704a8de567" rel="nofollow" target="_blank">' . __( 'Go', 'editormd' ) . '</a>'
 );
 
+
 $options['imagepaste_method'] = array(
 	'type'        => 'select',
 	'page'        => 'wpeditormd',
@@ -439,7 +440,7 @@ $options['imagepaste_method'] = array(
 	'description' => __( '(for paste image) Determine where to store your pasted images', 'editormd' ),
 	'options'     => array(
 		'local' => __( 'local', 'editormd' ),
-		'smms'    => __( 'https://SM.MS', 'editormd' )
+		'smms'  => __( 'https://SM.MS', 'editormd' )
 	),
 	'default'     => 'local'
 );
