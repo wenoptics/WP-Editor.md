@@ -7,6 +7,7 @@ function editormd_imagepaste_action_callback() {
 	$upload    = wp_upload_dir();
 	$uploadUrl = $upload['url'];
 	$uploadDir = $upload['path'];
+	$uploadSubfolder = trim(trim(paf('imagepaste_local_upload_folder')), '/');
 	$extension = '';
 
 	list( $data, $image ) = explode( ';', $_REQUEST['dataurl'] );
@@ -16,12 +17,19 @@ function editormd_imagepaste_action_callback() {
 		$extension = 'png';
 	}
 
+	// Create the sub-folder if not existed
+	if ( ! file_exists($uploadDir . '/' . $uploadSubfolder) ) {
+		if ( ! mkdir($uploadDir . '/' . $uploadSubfolder)) {
+			$result['error'] = "Create subfoler failed";
+		}
+	}
+
 	$name = md5( $_REQUEST['dataurl'] );
 	if ( ! $extension ) {
 		$result['error'] = "Could not determine image extension type";
 	} else {
-		$file    = $uploadDir . '/' . $name . '.' . $extension;
-		$fileUrl = $uploadUrl . '/' . $name . '.' . $extension;
+		$file    = $uploadDir . '/' . $uploadSubfolder . '/' . $name . '.' . $extension;
+		$fileUrl = $uploadUrl . '/' . $uploadSubfolder . '/' . $name . '.' . $extension;
 		file_put_contents( $file, base64_decode( $content ) );
 		if ( defined( 'W3TC' ) ) {
 			$result['w3tc'] = 1;

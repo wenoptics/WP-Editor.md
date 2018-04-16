@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: WP Editor.md
+ * Plugin Name: [dev]WP Editor.md
  * Plugin URI: https://iiong.com/wordpress-plugins-wp-editormd.html
  * Description: 或许这是一个WordPress中最好，最完美的Markdown编辑器。
  * Version: 4.1
